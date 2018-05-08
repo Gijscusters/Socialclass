@@ -51,7 +51,6 @@ error_post3 <- mean(apply(twelveclass$posterior, 1, entropy),na.rm=TRUE)
 R2_entropy3  <- (error_prior3 - error_post3) /error_prior3
 R2_entropy3
 
-
 ## test with income-missings
 
 sixclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 6, maxiter = 4000)
@@ -64,4 +63,132 @@ elvclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contact
 
 ```
 
+
+Def results Social class analysis. 
+Variables: Income, Labour status, Social support, contact family, contact friends, Education, cultureparticipation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#### following example of Niels Ohlsen (http://statistics.ohlsen-web.de/latent-class-analysis-polca/)
+
+## installing relevant packages
+
+library("reshape2")
+library("plyr")
+library("dplyr")
+library("ggplot2")
+library("ggparallel")
+library("igraph")
+library("tidyr")
+library("knitr")
+
+## pay attention: na.rm= FALSE or TRUE?
+
+## load data again
+Data <- read.spss("C:/Social class analysis/Sociale Index enquete 2016 arbeidss recode v2.sav", use.value.labels = FALSE, to.data.frame = TRUE)
+
+##### Analysis with variables missings as scores and Income single imputed.
+# werkstatus3 (10=missing). #opleid_miss (11=missing) # socialsupport_hermis (6=missing)
+# contactfam (1.0% missings). #contactvriend (1.2% missings) #cultuurvar2 (1.1% missings)
+
+### select relevant variables
+Data1 <- Data %>% select(werkstatus3, Income_imprec, Opleid_miss, socialsupport_hermis,contactfam,contactvriend,cultuurvar2)
+
+## formula
+form <- with(Data1, cbind(werkstatus3, Income_imprec, Opleid_miss, socialsupport_hermis,contactfam,contactvriend,cultuurvar2)~1)
+
+#run a sequence of models with 6-11 classes and print out the model with the lowest BIC
+# missings included
+
+max_II <- -100000
+min_bic <- 1000000
+for(i in 6:11){
+  lc <- poLCA(form, Data1, nclass=i, maxiter=15000, 
+              tol=1e-5, na.rm=FALSE,  
+              nrep=10, verbose=TRUE, calc.se=TRUE)
+  if(lc$bic < min_bic){
+    min_bic <- lc$bic
+    LCA_best_model<-lc
+  }
+}    	
+LCA_best_model
+
+## check with 12 classes whether BIC is even lower
+lc12 <- poLCA(form, Data1, nclass = 12, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+
+#lowest BIC(11): 306028.3
+
+# run other LcA's
+
+lc6 <- poLCA(form, Data1, nclass = 6, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc7 <- poLCA(form, Data1, nclass = 7, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc8 <- poLCA(form, Data1, nclass = 8, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc9 <- poLCA(form, Data1, nclass = 9, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc10 <- poLCA(form, Data1, nclass = 10, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc11 <- poLCA(form, Data1, nclass = 11, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+
+
+
+## calcute Entropy scores
+## calculating Entropy scores
+entropy <- function(p) sum(-p * log(p)) 
+
+error_prior6 <- entropy(lc6$P) 
+error_post6 <- mean(apply(lc6$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy6  <- (error_prior6 - error_post6) /error_prior6
+R2_entropy6
+
+error_prior7 <- entropy(lc7$P) 
+error_post7 <- mean(apply(lc7$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy7  <- (error_prior7 - error_post7) /error_prior7
+R2_entropy7
+
+error_prior8 <- entropy(lc8$P) 
+error_post8 <- mean(apply(lc8$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy8  <- (error_prior8 - error_post8) /error_prior8
+R2_entropy8
+
+error_prior9 <- entropy(lc9$P)  
+error_post9 <- mean(apply(lc9$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy9  <- (error_prior9 - error_post9) /error_prior9
+R2_entropy9
+
+error_prior10 <- entropy(lc10$P) 
+error_post10 <- mean(apply(lc10$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy10  <- (error_prior10 - error_post10) /error_prior10
+R2_entropy10
+
+error_prior11 <- entropy(lc11$P)  
+error_post11 <- mean(apply(lc11$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy11  <- (error_prior11 - error_post11) /error_prior11
+R2_entropy11
+
+error_prior12 <- entropy(lc12$P) 
+error_post12 <- mean(apply(lc12$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy12  <- (error_prior12 - error_post12) /error_prior12
+R2_entropy12
+
+### create plots for interpretation
+
+## 8 classes
+
+lc8a <- poLCA(form, Data1, nclass = 8, maxiter = 15000, graphs = TRUE, tol=1e-5, na.rm = FALSE, nrep = 5)
+
+lcmodel8 <- melt(lc8a$probs, level = 2)
+plot <- ggplot(lcmodel8, aes(x= L2, y=value, fill=Var2))
+plot <- plot + geom_bar(stat = "identity", position = "stack")
+plot <- plot + facet_grid(Var1 ~ .)
+plot <- plot + theme_bw() +scale_fill_grey()
+plot <- plot + labs(x= "variables", y="share of answercategories", fill ="answer categories")
+plot <- plot + theme( axis.text.y=element_blank(),
+                    axis.ticks.y=element_blank(),                    
+                    panel.grid.major.y=element_blank())
+print(plot)  
+
+  
+rm(plot)
+
+
+```
 
