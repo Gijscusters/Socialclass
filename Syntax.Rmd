@@ -1,0 +1,67 @@
+---
+title: "Socialclass"
+author: "Gijs Custers"
+date: "2 mei 2018"
+output: html_document
+---
+
+Exploring results Social class analysis. 
+Variables: Income, Labour status, Social support, contact family, contact friends, Education, cultureparticipation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(foreign)
+library(poLCA)
+
+## load prepared data in SPSS
+Datatest <- read.spss("C:/Social class analysis/Sociale Index enquete 2016 arbeidss recode v2.sav", use.value.labels = FALSE, to.data.frame = TRUE)
+
+
+### test with Income imputed for optimal number of classes
+twoclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 2, maxiter = 1000)
+threeclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 3, maxiter = 1000)
+fourclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 4, maxiter = 1000)
+fiveclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 5, maxiter = 4000)
+sixclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 6, maxiter = 4000)
+sevenclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 7, maxiter = 10000)
+eightclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 8, maxiter = 10000)
+nineclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 9, maxiter = 10000)
+tenclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 10, maxiter = 10000)
+elvclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 11, maxiter = 10000)
+twelveclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 12, maxiter = 10000)
+thirtclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 13, maxiter = 20000)
+fourtclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 14, maxiter = 20000)
+fiftclass <- poLCA(cbind(werkstatus, Income_imprec,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 15, maxiter = 20000)
+
+## calculating Entropy scores
+entropy <- function(p) sum(-p * log(p)) 
+error_prior <- entropy(tenclass$P) # Class proportions 
+error_post <- mean(apply(tenclass$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy  <- (error_prior - error_post) /error_prior
+R2_entropy
+
+error_prior2 <- entropy(sevenclass$P) # Class proportions 
+error_post2 <- mean(apply(sevenclass$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy2  <- (error_prior2 - error_post2) /error_prior2
+R2_entropy2
+
+error_prior3 <- entropy(twelveclass$P) # Class proportions 
+error_post3 <- mean(apply(twelveclass$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy3  <- (error_prior3 - error_post3) /error_prior3
+R2_entropy3
+
+
+## test with income-missings
+
+sixclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 6, maxiter = 4000)
+sevenclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 7, maxiter = 4000)
+eightclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 8, maxiter = 10000)
+nineclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 9, maxiter = 10000)
+tenclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 10, maxiter = 10000)
+elvclassA <- poLCA(cbind(werkstatus, Income,socialsupport_her,contactfam,contactvriend,Opleid,cultuurvar2) ~ 1, data = Datatest, nclass = 11, maxiter = 20000)
+
+
+```
+
+
