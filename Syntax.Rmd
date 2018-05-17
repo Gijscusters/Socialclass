@@ -77,11 +77,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library("reshape2")
 library("plyr")
 library("dplyr")
-library("ggplot2")
 library("ggparallel")
 library("igraph")
 library("tidyr")
 library("knitr")
+library("ggplot2")
 
 ## pay attention: na.rm= FALSE or TRUE?
 
@@ -128,8 +128,6 @@ lc9 <- poLCA(form, Data1, nclass = 9, maxiter = 15000, tol=1e-5, na.rm = FALSE, 
 lc10 <- poLCA(form, Data1, nclass = 10, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
 lc11 <- poLCA(form, Data1, nclass = 11, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
 
-
-
 ## calcute Entropy scores
 ## calculating Entropy scores
 entropy <- function(p) sum(-p * log(p)) 
@@ -169,25 +167,312 @@ error_post12 <- mean(apply(lc12$posterior, 1, entropy),na.rm=TRUE)
 R2_entropy12  <- (error_prior12 - error_post12) /error_prior12
 R2_entropy12
 
-### create plots for interpretation
+###reverse scores and compare with LC10 - Income_miss
 
-## 8 classes
+Data1$Income_rev <- 6 - Data1$Income_imprec 
+Data1$Opleid_miss_rev <- 12 - Data1$Opleid_miss
+Data1$socialsupport_rev <- 7 - Data1$socialsupport_hermis
+Data1$contactfam_rev <- 7 - Data1$contactfam
+Data1$contactvriend_rev <- 7 - Data1$contactvriend
+Data1$cultuurvar2_rev <- 7 - Data1$cultuurvar2
 
-lc8a <- poLCA(form, Data1, nclass = 8, maxiter = 15000, graphs = TRUE, tol=1e-5, na.rm = FALSE, nrep = 5)
+form3 <- with(Data1, cbind(werkstatus3, Income_rev, Opleid_miss_rev, socialsupport_rev,contactfam_rev,contactvriend_rev,cultuurvar2_rev)~1)
 
-lcmodel8 <- melt(lc8a$probs, level = 2)
-plot <- ggplot(lcmodel8, aes(x= L2, y=value, fill=Var2))
-plot <- plot + geom_bar(stat = "identity", position = "stack")
-plot <- plot + facet_grid(Var1 ~ .)
-plot <- plot + theme_bw() +scale_fill_grey()
-plot <- plot + labs(x= "variables", y="share of answercategories", fill ="answer categories")
-plot <- plot + theme( axis.text.y=element_blank(),
-                    axis.ticks.y=element_blank(),                    
-                    panel.grid.major.y=element_blank())
-print(plot)  
+lc10 <- poLCA(form3, Data1, nclass = 10, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
 
-  
-rm(plot)
+## plots
+
+## classes and werkstatus
+lcmodel10 <- melt(lc10$probs, level = 2)
+lcmodel10subs <- subset(lcmodel10, L2 == "werkstatus3")
+plota10 <- ggplot(lcmodel10subs, aes(x= Var1, y=value, fill=Var2))
+plota10 <- plota10 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plota10 <- plota10 + scale_fill_brewer(palette = "Set3",labels=c("fulltime","parttime","werkloos","arbeidsongeschikt","bijstand","pensioen","huisvrouwman","student","overig","NA")) + labs(fill="Employment status") + theme_bw()
+plota10
+
+#class and income
+lcmodel10subs2 <- subset(lcmodel10, L2 == "Income_rev")
+plot10a2 <- ggplot(lcmodel10subs2, aes(x= Var1, y=value, fill=Var2))
+plot10a2 <- plot10a2 + geom_bar(stat = "identity",colour = "black")
+paleta <- c("#006d2c","#2ca25f","#66c2a4","#b2e2e2","#edf8fb")
+levelsincomea <- c(">3,350","2,000 - 3,350","1,500 - 2,000","1,100 - 1,500","<1,100")
+plot10a2 <- plot10a2 + scale_fill_manual(values = paleta, labels=levelsincomea) + labs(fill="Income") +theme_bw()
+plot10a2
+
+#class and socialsupport
+lcmodel10subs3 <- subset(lcmodel10, L2 == "socialsupport_rev")
+plot10a3 <- ggplot(lcmodel10subs3, aes(x= Var1, y=value, fill=Var2))
+plot10a3 <- plot10a3 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10a3 <- plot10a3 + scale_fill_manual(values = palet2, labels=socialsupportanswer) + labs(fill="Social support") +theme_bw()
+plot10a3
+
+                                                                                                  
+#class and contact
+lcmodel10subs4 <- subset(lcmodel10, L2 == "contactfam_rev" | L2 == "contactvriend_rev")
+plot10a4 <- ggplot(lcmodel10subs4, aes(x= Var1, y=value, fill=Var2))
+plot10a4 <- plot10a4 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10a4 <- plot10a4 + facet_grid(. ~ L2)
+plot10a4 <- plot10a4 + scale_fill_manual(values = palet3,labels=contactanswer) + labs(fill="Contact") + theme_bw()
+plot10a4
+
+#aggregate(value ~ Var2, data = lcmodel10bsubs, mean) # mean is (natuurlijk) zelfde per klasse (totaal = 1, aantal antwoordcategorieen hetzelfde)
+
+# class and culture
+lcmodel10subs5 <- subset(lcmodel10, L2 == "cultuurvar2_rev")
+plot10a5 <- ggplot(lcmodel10subs5, aes(x= Var1, y=value, fill=Var2))
+plot10a5 <- plot10a5 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10a5 <- plot10a5 + scale_fill_manual(values = palet4, labels=cultuurvaranswer) + labs(fill="Culture visit") +theme_bw()
+plot10a5
+
+## class and education
+lcmodel10subs6 <- subset(lcmodel10, L2 == "Opleid_miss_rev")
+plot10a6 <- ggplot(lcmodel10subs6, aes(x= Var1, y=value, fill=Var2))
+plot10a6 <- plot10a6 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10a6 <- plot10a6 + scale_fill_manual(values = palet5, labels=opleid) + labs(fill="Education") + theme_bw()
+plot10a6
+
+
+
+```
+
+
+Results with Income_miss (missing = 6)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### Select variables
+Data2 <- Data %>% select(werkstatus3, Income_miss, Opleid_miss, socialsupport_hermis,contactfam,contactvriend,cultuurvar2)
+
+##recoding variables for better plot interpretations
+Data2$Income_miss_rev <- 7 - Data2$Income_miss 
+Data2$Opleid_miss_rev <- 12 - Data2$Opleid_miss
+Data2$socialsupport_rev <- 7 - Data2$socialsupport_hermis
+Data2$contactfam_rev <- 7 - Data2$contactfam
+Data2$contactvriend_rev <- 7 - Data2$contactvriend
+Data2$cultuurvar2_rev <- 7 - Data2$cultuurvar2
+
+
+## formula
+form2 <- with(Data2, cbind(werkstatus3, Income_miss_rev, Opleid_miss_rev, socialsupport_rev,contactfam_rev,contactvriend_rev,cultuurvar2_rev)~1)
+
+
+### run LCA's
+lc7b <- poLCA(form2, Data2, nclass = 7, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc8b <- poLCA(form2, Data2, nclass = 8, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc9b <- poLCA(form2, Data2, nclass = 9, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc10b <- poLCA(form2, Data2, nclass = 10, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc11b <- poLCA(form2, Data2, nclass = 11, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+lc12b <- poLCA(form2, Data2, nclass = 12, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+
+
+## estimate R2 entropy
+entropy <- function(p) sum(-p * log(p)) 
+
+error_prior9b <- entropy(lc9b$P)  
+error_post9b <- mean(apply(lc9b$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy9b  <- (error_prior9b - error_post9b) /error_prior9b
+R2_entropy9b
+
+error_prior10b <- entropy(lc10b$P) 
+error_post10b <- mean(apply(lc10b$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy10b  <- (error_prior10b - error_post10b) /error_prior10b
+R2_entropy10b
+
+error_prior11b <- entropy(lc11b$P)  
+error_post11b <- mean(apply(lc11b$posterior, 1, entropy),na.rm=TRUE) 
+R2_entropy11b  <- (error_prior11b - error_post11b) /error_prior11b
+R2_entropy11b
+
+
+### plotting with 7 classes ###
+# for more colurs, see http://colorbrewer.org
+## classes and werkstatus
+lcmodel7b <- melt(lc7b$probs, level = 2)
+lcmodel7bsubs <- subset(lcmodel7b, L2 == "werkstatus3")
+plot7b <- ggplot(lcmodel7bsubs, aes(x= Var1, y=value, fill=Var2))
+plot7b <- plot7b + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot7b <- plot7b + scale_fill_brewer(palette = "Set3",labels=c("fulltime","parttime","werkloos","arbeidsongeschikt","bijstand","pensioen","huisvrouwman","student","overig","NA")) + labs(fill="Employment status") + theme_bw()
+plot7b
+
+#class and income
+lcmodel7bsubs2 <- subset(lcmodel7b, L2 == "Income_miss_rev")
+plot7b2 <- ggplot(lcmodel7bsubs2, aes(x= Var1, y=value, fill=Var2))
+plot7b2 <- plot7b2 + geom_bar(stat = "identity",colour = "black")
+palet <- c("#848484","#006d2c","#2ca25f","#66c2a4","#b2e2e2","#edf8fb")
+levelsincome <- c("NA",">3,350","2,000 - 3,350","1,500 - 2,000","1,100 - 1,500","<1,100")
+plot7b2 <- plot7b2 + scale_fill_manual(values = palet, labels=levelsincome) + labs(fill="Income") +theme_bw()
+plot7b2
+
+#class and socialsupport
+lcmodel7bsubs3 <- subset(lcmodel7b, L2 == "socialsupport_rev")
+plot7b3 <- ggplot(lcmodel7bsubs3, aes(x= Var1, y=value, fill=Var2))
+plot7b3 <- plot7b3 + geom_bar(stat = "identity", position = "stack", colour = "black")
+socialsupportanswer <- c( "NA","helemaal mee eens","","","","helemaal mee oneens")
+palet2 <- c("#848484","#bd0026","#f03b20","#fd8d3c","#fecc5c","#ffffb2")
+plot7b3 <- plot7b3 + scale_fill_manual(values = palet2, labels=socialsupportanswer) + labs(fill="Social support") +theme_bw()
+plot7b3
+
+                                                                                                  
+#class and contact
+lcmodel7bsubs4 <- subset(lcmodel7b, L2 == "contactfam_rev" | L2 == "contactvriend_rev")
+plot7b4 <- ggplot(lcmodel7bsubs4, aes(x= Var1, y=value, fill=Var2))
+plot7b4 <- plot7b4 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot7b4 <- plot7b4 + facet_grid(. ~ L2)
+contactanswer <- c("Bijna dagelijks","","","","","Nooit")
+palet3 <- c("#b30000","#e34a33","#fc8d59","#fdbb84","#fdd49e","#fef0d9")
+plot7b4 <- plot7b4 + scale_fill_manual(values = palet3,labels=contactanswer) + labs(fill="Contact") + theme_bw()
+plot7b4
+
+#aggregate(value ~ Var2, data = lcmodel7bsubs, mean) # mean is (natuurlijk) zelfde per klasse (totaal = 1, aantal antwoordcategorieen hetzelfde)
+
+# class and culture
+lcmodel7bsubs5 <- subset(lcmodel7b, L2 == "cultuurvar2_rev")
+plot7b5 <- ggplot(lcmodel7bsubs5, aes(x= Var1, y=value, fill=Var2))
+plot7b5 <- plot7b5 + geom_bar(stat = "identity", position = "stack", colour = "black")
+cultuurvaranswer <- c("Meerdere keren per week","","2/3 keer per maand","1 keer per maand","1< keer per maand","Nooit")
+palet4 <- c("#045a8d","#2b8cbe","#74a9cf","#a6bddb","#d0d1e6","#f1eef6")
+plot7b5 <- plot7b5 + scale_fill_manual(values = palet4, labels=cultuurvaranswer) + labs(fill="Culture visit") +theme_bw()
+plot7b5
+
+## class and education
+lcmodel7bsubs6 <- subset(lcmodel7b, L2 == "Opleid_miss_rev")
+plot7b6 <- ggplot(lcmodel7bsubs6, aes(x= Var1, y=value, fill=Var2))
+plot7b6 <- plot7b6 + geom_bar(stat = "identity", position = "stack", colour = "black")
+opleid <- c("NA", "WO","HBO","VWO","HAVO","MULO/MMS","MBO","MAVO/VMBO","LBO/praktijk","basisschool", "geen opl")
+palet5 <- c("#848484","#014636","#016c59","#02818a","#3690c0","#67a9cf","#a6bddb","#d0d1e6","#ece2f0","#fff7fb","#ffffff")
+plot7b6 <- plot7b6 + scale_fill_manual(values = palet5, labels=opleid) + labs(fill="Education") + theme_bw()
+plot7b6
+
+
+### experiment with facet_wrap
+lcmodel7bsub2 <- subset(lcmodel7b, Var1=='class 1: ')
+plotclass1 <- ggplot(lcmodel7bsub2, aes(x = Var1, y=value, fill=Var2))
+plotclass1 <- plotclass1 +  geom_bar(stat = "identity", position = "stack")
+plotclass1 <- plotclass1 + facet_grid(. ~ L2)
+plotclass1
+## does not work due to value labelling
+
+### plotting with 10 classes ###
+
+## classes and werkstatus
+lcmodel10b <- melt(lc10b$probs, level = 2)
+lcmodel10bsubs <- subset(lcmodel10b, L2 == "werkstatus3")
+plot10b <- ggplot(lcmodel10bsubs, aes(x= Var1, y=value, fill=Var2))
+plot10b <- plot10b + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10b <- plot10b + scale_fill_brewer(palette = "Set3",labels=c("fulltime","parttime","werkloos","arbeidsongeschikt","bijstand","pensioen","huisvrouwman","student","overig","NA")) + labs(fill="Employment status") + theme_bw()
+plot10b
+
+#class and income
+lcmodel10bsubs2 <- subset(lcmodel10b, L2 == "Income_miss_rev")
+plot10b2 <- ggplot(lcmodel10bsubs2, aes(x= Var1, y=value, fill=Var2))
+plot10b2 <- plot10b2 + geom_bar(stat = "identity",colour = "black")
+plot10b2 <- plot10b2 + scale_fill_manual(values = palet, labels=levelsincome) + labs(fill="Income") +theme_bw()
+plot10b2
+
+#class and socialsupport
+lcmodel10bsubs3 <- subset(lcmodel10b, L2 == "socialsupport_rev")
+plot10b3 <- ggplot(lcmodel10bsubs3, aes(x= Var1, y=value, fill=Var2))
+plot10b3 <- plot10b3 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10b3 <- plot10b3 + scale_fill_manual(values = palet2, labels=socialsupportanswer) + labs(fill="Social support") +theme_bw()
+plot10b3
+
+                                                                                                  
+#class and contact
+lcmodel10bsubs4 <- subset(lcmodel10b, L2 == "contactfam_rev" | L2 == "contactvriend_rev")
+plot10b4 <- ggplot(lcmodel10bsubs4, aes(x= Var1, y=value, fill=Var2))
+plot10b4 <- plot10b4 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10b4 <- plot10b4 + facet_grid(. ~ L2)
+plot10b4 <- plot10b4 + scale_fill_manual(values = palet3,labels=contactanswer) + labs(fill="Contact") + theme_bw()
+plot10b4
+
+#aggregate(value ~ Var2, data = lcmodel10bsubs, mean) # mean is (natuurlijk) zelfde per klasse (totaal = 1, aantal antwoordcategorieen hetzelfde)
+
+# class and culture
+lcmodel10bsubs5 <- subset(lcmodel10b, L2 == "cultuurvar2_rev")
+plot10b5 <- ggplot(lcmodel10bsubs5, aes(x= Var1, y=value, fill=Var2))
+plot10b5 <- plot10b5 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10b5 <- plot10b5 + scale_fill_manual(values = palet4, labels=cultuurvaranswer) + labs(fill="Culture visit") +theme_bw()
+plot10b5
+
+## class and education
+lcmodel10bsubs6 <- subset(lcmodel10b, L2 == "Opleid_miss_rev")
+plot10b6 <- ggplot(lcmodel10bsubs6, aes(x= Var1, y=value, fill=Var2))
+plot10b6 <- plot10b6 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot10b6 <- plot10b6 + scale_fill_manual(values = palet5, labels=opleid) + labs(fill="Education") + theme_bw()
+plot10b6
+
+
+### test with 9 classes, leaving NA Income out ou analyses
+
+Data3 <- Data2 %>% filter(Income_miss_rev != 1)
+Data3 <- Data3 %>% filter(Opleid_miss_rev != 1)
+Data3 <- Data3 %>% filter(werkstatus3 != 10)
+Data3 <- Data3 %>% filter(socialsupport_rev != 1)
+
+Data3$Income_miss_rev <- Data3$Income_miss_rev - 1
+Data3$Opleid_miss_rev <- Data3$Opleid_miss_rev - 1
+Data3$socialsupport_rev <- Data3$socialsupport_rev - 1
+
+form4 <- with(Data3, cbind(werkstatus3, Income_miss_rev, Opleid_miss_rev, socialsupport_rev,contactfam_rev,contactvriend_rev,cultuurvar2_rev)~1)
+
+
+lc9c <- poLCA(form4, Data3, nclass = 9, maxiter = 15000, tol=1e-5, na.rm = FALSE, nrep = 10)
+
+### plots
+## classes and werkstatus
+lcmodel9c <- melt(lc9c$probs, level = 2)
+lcmodel9csubs <- subset(lcmodel9c, L2 == "werkstatus3")
+plot9c <- ggplot(lcmodel9csubs, aes(x= Var1, y=value, fill=Var2))
+plot9c <- plot9c + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot9c <- plot9c + scale_fill_brewer(palette = "Set3",labels=c("fulltime","parttime","werkloos","arbeidsongeschikt","bijstand","pensioen","huisvrouwman","student","overig")) + labs(fill="Employment status") + theme_bw()
+plot9c
+
+#class and income
+lcmodel9csubs2 <- subset(lcmodel9c, L2 == "Income_miss_rev")
+plot9c2 <- ggplot(lcmodel9csubs2, aes(x= Var1, y=value, fill=Var2))
+plot9c2 <- plot9c2 + geom_bar(stat = "identity",colour = "black")
+palet9c <- c("#006d2c","#2ca25f","#66c2a4","#b2e2e2","#edf8fb")
+levelsincome9c <- c(">3,350","2,000 - 3,350","1,500 - 2,000","1,100 - 1,500","<1,100")
+plot9c2 <- plot9c2 + scale_fill_manual(values = palet9c, labels=levelsincome9c) + labs(fill="Income") +theme_bw()
+plot9c2
+
+#class and socialsupport
+lcmodel9csubs3 <- subset(lcmodel9c, L2 == "socialsupport_rev")
+plot9c3 <- ggplot(lcmodel9csubs3, aes(x= Var1, y=value, fill=Var2))
+plot9c3 <- plot9c3 + geom_bar(stat = "identity", position = "stack", colour = "black")
+socialsupportanswer9c <- c("helemaal mee eens","","","","helemaal mee oneens")
+palet29c <- c("#bd0026","#f03b20","#fd8d3c","#fecc5c","#ffffb2")
+plot9c3 <- plot9c3 + scale_fill_manual(values = palet29c, labels=socialsupportanswer9c) + labs(fill="Social support") +theme_bw()
+plot9c3
+
+                                                                                                  
+#class and contact
+lcmodel9csubs4 <- subset(lcmodel9c, L2 == "contactfam_rev" | L2 == "contactvriend_rev")
+plot9c4 <- ggplot(lcmodel9csubs4, aes(x= Var1, y=value, fill=Var2))
+plot9c4 <- plot9c4 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot9c4 <- plot9c4 + facet_grid(. ~ L2)
+plot9c4 <- plot9c4 + scale_fill_manual(values = palet3,labels=contactanswer) + labs(fill="Contact") + theme_bw()
+plot9c4
+
+#aggregate(value ~ Var2, data = lcmodel9csubs, mean) # mean is (natuurlijk) zelfde per klasse (totaal = 1, aantal antwoordcategorieen hetzelfde)
+
+# class and culture
+lcmodel9csubs5 <- subset(lcmodel9c, L2 == "cultuurvar2_rev")
+plot9c5 <- ggplot(lcmodel9csubs5, aes(x= Var1, y=value, fill=Var2))
+plot9c5 <- plot9c5 + geom_bar(stat = "identity", position = "stack", colour = "black")
+plot9c5 <- plot9c5 + scale_fill_manual(values = palet4, labels=cultuurvaranswer) + labs(fill="Culture visit") +theme_bw()
+plot9c5
+
+## class and education
+lcmodel9csubs6 <- subset(lcmodel9c, L2 == "Opleid_miss_rev")
+plot9c6 <- ggplot(lcmodel9csubs6, aes(x= Var1, y=value, fill=Var2))
+plot9c6 <- plot9c6 + geom_bar(stat = "identity", position = "stack", colour = "black")
+opleid9c <- c("WO","HBO","VWO","HAVO","MULO/MMS","MBO","MAVO/VMBO","LBO/praktijk","basisschool", "geen opl")
+palet59c <- c("#014636","#016c59","#02818a","#3690c0","#67a9cf","#a6bddb","#d0d1e6","#ece2f0","#fff7fb","#ffffff")
+plot9c6 <- plot9c6 + scale_fill_manual(values = palet59c, labels=opleid9c) + labs(fill="Education") + theme_bw()
+plot9c6
+
 
 
 ```
