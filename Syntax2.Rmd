@@ -89,7 +89,7 @@ library("xlsx")
 ## pay attention: na.rm= FALSE or TRUE?
 
 ## load data again
-Data <- read.spss("C:/Social class analysis/Sociale Index enquete 2016 arbeidss recode v2.sav", use.value.labels = FALSE, to.data.frame = TRUE)
+Data <- read.spss("C:/Social class analysis/Sociale Index enquete 2016 arbeidss recode v3.sav", use.value.labels = FALSE, to.data.frame = TRUE)
 
 ##### Analysis with variables missings as scores and Income single imputed.
 # werkstatus3 (10=missing). #opleid_miss (11=missing) # socialsupport_hermis (6=missing)
@@ -716,19 +716,21 @@ Further testing with multiple singly imputed datasets and comparing outcomes..
 knitr::opts_chunk$set(echo = TRUE)
 
 ### select variables
-Data5 <- Data %>% select(werkstatus3, Income_imprec, Income_imp2rec,Income_imp3rec,Income_imp4rec,Income_imp5rec,Opleid_new, socialsupport_new,contactfam_nieuw,contactvriend_nieuw,cultuurvar2_new)
+Data6 <- Data %>% select(werkstatus3, Income_imprec, Income_imp2rec,Income_imp3rec,Income_imp4rec,Income_imp5rec,Opleid_new, socialsupport_new,contactfam_nieuw,contactvriend_nieuw,cultuurvar2_new, huiseigenaar,MEAN_WOZ_WAARDE_2,MEAN_WOZ_WAARDE_10)
 
 ####Recodes
-Data5$Income_rev <- 6 - Data5$Income_imprec
-Data5$Income_rev2 <- 6 - Data5$Income_imp2rec 
-Data5$Income_rev3 <- 6 - Data5$Income_imp3rec 
-Data5$Income_rev4 <- 6 - Data5$Income_imp4rec 
-Data5$Income_rev5 <- 6 - Data5$Income_imp5rec 
-Data5$Opleid_new_rev <- 11 - Data5$Opleid_new
-Data5$socialsupport_rev <- 5 - Data5$socialsupport_new
-Data5$contactfam_rev <- 5 - Data5$contactfam_nieuw
-Data5$contactvriend_rev <- 5 - Data5$contactvriend_nieuw
-Data5$cultuurvar2_rev <- 5 - Data5$cultuurvar2_new
+Data6$Income_rev <- 6 - Data6$Income_imprec
+Data6$Income_rev2 <- 6 - Data6$Income_imp2rec 
+Data6$Income_rev3 <- 6 - Data6$Income_imp3rec 
+Data6$Income_rev4 <- 6 - Data6$Income_imp4rec 
+Data6$Income_rev5 <- 6 - Data6$Income_imp5rec 
+Data6$Opleid_new_rev <- 11 - Data6$Opleid_new
+Data6$socialsupport_rev <- 5 - Data6$socialsupport_new
+Data6$contactfam_rev <- 5 - Data6$contactfam_nieuw
+Data6$contactvriend_rev <- 5 - Data6$contactvriend_nieuw
+Data6$cultuurvar2_rev <- 5 - Data6$cultuurvar2_new
+
+
 
 
 ## formulas
